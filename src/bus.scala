@@ -89,8 +89,13 @@ object eval_lib {
   }
 
   lazy val initEnv: Env = bottomup_lib.ops.map{op =>
-    (op.name, Prim(op.name, op.computeVal))}.toMap +
-  ("list" -> Prim("list", {v => v}))
+    (op.name, Prim(op.name, op.computeVal))}.toMap ++
+  List(
+    Prim("list", {v => v}),
+    Prim("even?", {v => (v: @unchecked) match {
+      case P(I(n), N) => B(n % 2 == 0)
+    }})
+  ).map{p => (p.name, p)}.toMap
 
   def eval(e: Value) = evalExpr(e, initEnv)
 }
