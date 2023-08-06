@@ -133,13 +133,13 @@ object bottomup_lib {
     }
   )
   case class IOEx(args: List[Value], output: Value)
-  def bottomup(formals: List[String], ios: List[IOEx]): Value = {
+  def bottomup(formals: List[String], ios: List[IOEx], maxSize: Int = 10): Option[Value] = {
     val n = formals.length
     val inputs = ios.map{io => io.args.map(eval)}
     val outputs = ios.map{io => io.output}
     val inputPieces = (for (i <- 0 until n) yield Piece(S(formals(i)), 1, inputs.map(_(i)))).toList
     val constantPieces = Nil // TODO
-    bottomupIter(outputs, 1, List(Nil, inputPieces ++ constantPieces))
+    bottomupIter(outputs, 1, List(Nil, inputPieces ++ constantPieces), maxSize)
   }
 
   def toOption[A](xs: List[A]): Option[A] = xs match {
@@ -193,14 +193,16 @@ object bottomup_lib {
       old_p.deno == p.deno
     }})}
 
-  def bottomupIter(outputs: List[Value], size: Int, piecess: List[List[Piece]]): Value = getDenotPiece(outputs, piecess.last) match {
-    case Some(piece) => piece.expr
+  def bottomupIter(outputs: List[Value], size: Int, piecess: List[List[Piece]], maxSize: Int): Option[Value] = getDenotPiece(outputs, piecess.last) match {
+    case Some(piece) => Some(piece.expr)
     case None => {
       val newSize = size + 1
-      val newPieces = computeNewPieces(newSize, piecess)
-      val uniqueNewPieces = withoutDenos(piecess, uniqueDenos(newPieces))
-      val newPiecess = piecess ++ List(uniqueNewPieces)
-      bottomupIter(outputs, newSize, newPiecess)
+      if (newSize < maxSize) {
+        val newPieces = computeNewPieces(newSize, piecess)
+        val uniqueNewPieces = withoutDenos(piecess, uniqueDenos(newPieces))
+        val newPiecess = piecess ++ List(uniqueNewPieces)
+        bottomupIter(outputs, newSize, newPiecess, maxSize)
+      } else None
     }
   }
 }
