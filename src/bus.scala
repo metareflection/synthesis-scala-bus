@@ -194,6 +194,22 @@ object bottomup_lib {
       override def computeVal(v: Value) = (v: @unchecked) match {
         case P(xs, P(ys, N)) => append(xs, ys)
       }
+    },
+    new Op {
+      override val name = "apply1"
+      override val arity = 2
+      override def applicable(v: Value): Boolean = v match {
+        case P(fun, P(_, N)) => fun match {
+          case Prim(_, _) => true
+          case Clo(_, _, _) => true
+          case _ => false
+        }
+        case _ => false
+      }
+      override def computeExpr(e: Value): Value = e
+      override def computeVal(v: Value) = (v: @unchecked) match {
+        case P(fun, args) => applyFun(fun, args)
+      }
     }
   )
   case class IOEx(args: List[Value], output: Value)
@@ -223,7 +239,12 @@ object bottomup_lib {
   def applicableOp(op: Op, ps: List[Piece]): Boolean =
     piecesArguments(ps).forall(op.applicable)
   def applyOp(op: Op, ps: List[Piece]): Option[Piece] = {
-    val odeno = Some(piecesArguments(ps).map(op.computeVal)) // TODO: error handling
+    var odeno: Option[List[Value]] = None
+    try {
+      odeno = Some(piecesArguments(ps).map(op.computeVal))
+    } catch {
+      case _ =>
+    }
     odeno.map{deno =>
       val expr = op.computeExpr(toListValue(ps.map(_.expr)))
       val size = 1 + ps.map(_.size).sum
