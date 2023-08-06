@@ -1,7 +1,7 @@
 package bus
 
 object ast {
-  trait Value
+  sealed trait Value
   case class B(b: Boolean) extends Value                      // Boolean
   case class I(n: Int) extends Value                          // Int
   case class S(sym: String) extends Value                     // Symbol
@@ -66,7 +66,7 @@ object utils {
 import utils._
 
 object eval_lib {
-  def evalExpr(expr: Value, env: Env): Value = expr match {
+  def evalExpr(expr: Value, env: Env): Value = (expr: @unchecked) match {
     case B(_) => expr
     case I(_) => expr
     case S(sym) => env(sym)
@@ -239,9 +239,10 @@ object bottomup_lib {
   def applicableOp(op: Op, ps: List[Piece]): Boolean =
     piecesArguments(ps).forall(op.applicable)
   def applyOp(op: Op, ps: List[Piece]): Option[Piece] = {
+    val args = piecesArguments(ps)
     var odeno: Option[List[Value]] = None
     try {
-      odeno = Some(piecesArguments(ps).map(op.computeVal))
+      odeno = Some(args.map(op.computeVal))
     } catch {
       case _ =>
     }
