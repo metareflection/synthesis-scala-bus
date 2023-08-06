@@ -77,7 +77,10 @@ object eval_lib {
       evalExpr(body, extendEnv(formals, args, env))
   }
 
-  def eval(e: Value) = evalExpr(e, Map.empty)
+  val initEnv = Map(
+    "list" -> Prim("list", {v => v})
+  )
+  def eval(e: Value) = evalExpr(e, initEnv)
 }
 import eval_lib._
 
