@@ -77,9 +77,10 @@ object eval_lib {
       evalExpr(body, extendEnv(formals, args, env))
   }
 
-  val initEnv = Map(
-    "list" -> Prim("list", {v => v})
-  )
+  lazy val initEnv: Env = bottomup_lib.ops.map{op =>
+    (op.name, Prim(op.name, op.computeVal))}.toMap +
+  ("list" -> Prim("list", {v => v}))
+
   def eval(e: Value) = evalExpr(e, initEnv)
 }
 import eval_lib._
@@ -132,6 +133,39 @@ object bottomup_lib {
       }
       override def computeVal(v: Value) = (v: @unchecked) match {
         case P(B(b), N) => B(!b)
+      }
+    },
+    new Op {
+      override val name = "add1"
+      override val arity = 1
+      override def applicable(v: Value): Boolean = v match {
+        case P(I(n), N) => true
+        case _ => false
+      }
+      override def computeVal(v: Value) = (v: @unchecked) match {
+        case P(I(n), N) => I(n+1)
+      }
+    },
+    new Op {
+      override val name = "+"
+      override val arity = 2
+      override def applicable(v: Value): Boolean = v match {
+        case P(I(n1), P(I(n2), N)) => true
+        case _ => false
+      }
+      override def computeVal(v: Value) = (v: @unchecked) match {
+        case P(I(n1), P(I(n2), N)) => I(n1+n2)
+      }
+    },
+    new Op {
+      override val name = "*"
+      override val arity = 2
+      override def applicable(v: Value): Boolean = v match {
+        case P(I(n1), P(I(n2), N)) => true
+        case _ => false
+      }
+      override def computeVal(v: Value) = (v: @unchecked) match {
+        case P(I(n1), P(I(n2), N)) => I(n1*n2)
       }
     }
   )
