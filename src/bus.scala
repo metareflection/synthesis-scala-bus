@@ -170,7 +170,7 @@ object bottomup_lib {
     }
   )
   case class IOEx(args: List[Value], output: Value)
-  def bottomup(formals: List[String], ios: List[IOEx], maxSize: Int = 10): Option[Value] = {
+  def bottomup(formals: List[String], ios: List[IOEx], maxSize: Int = 8): Option[Value] = {
     val n = formals.length
     val inputs = ios.map{io => io.args.map(eval)}
     val outputs = ios.map{io => io.output}
