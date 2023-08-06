@@ -51,6 +51,17 @@ object utils {
       case (N, N) => env
       case (P(S(x1), xs), P(v1, vs)) => (extendEnv(xs, vs, env) + (x1 -> v1))
     }
+
+  def isList(v: Value): Boolean = v match {
+    case N => true
+    case P(x, y) => isList(y)
+    case _ => false
+  }
+
+  def append(xs: Value, ys: Value): Value = (xs: @unchecked) match {
+    case N => ys
+    case P(x, xs) => P(x, append(xs, ys))
+  }
 }
 import utils._
 
@@ -166,6 +177,17 @@ object bottomup_lib {
       }
       override def computeVal(v: Value) = (v: @unchecked) match {
         case P(I(n1), P(I(n2), N)) => I(n1*n2)
+      }
+    },
+    new Op {
+      override val name = "append"
+      override val arity = 2
+      override def applicable(v: Value): Boolean = v match {
+        case P(xs, P(ys, N)) => isList(xs)
+        case _ => false
+      }
+      override def computeVal(v: Value) = (v: @unchecked) match {
+        case P(xs, P(ys, N)) => append(xs, ys)
       }
     }
   )
