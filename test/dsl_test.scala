@@ -3,7 +3,8 @@ import org.scalatest.funsuite.AnyFunSuite
 object dsl_printer {
     def pretty(x: Any): String = x match {
       case List("input", name) => s"(input $name)"
-      case List(op, args: List[Any]) => s"""($op${args.map(pretty).mkString(" ", " ", ")")}"""
+      case List(op, args: List[Any]) =>
+        (op::(args.map(pretty))).mkString("(", " ", ")")
       case _ => x.toString
   }
 }
