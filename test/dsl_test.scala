@@ -3,8 +3,8 @@ import org.scalatest.funsuite.AnyFunSuite
 object dsl_printer {
     def pretty(x: Any): String = x match {
       case List("input", name) => s"(input $name)"
-      case List(op, args: List[Any]) =>
-        (op::(args.map(pretty))).mkString("(", " ", ")")
+      case List(op: String, args: List[Any]) =>
+        op + args.map(pretty).mkString("(", ", ", ")")
       case _ => x.toString
   }
 }
@@ -25,7 +25,7 @@ class ArithDslTesting extends AnyFunSuite {
       List(IOEx(List(1), 2), IOEx(List(2), 3))))
   }
   test("arith inc str") {
-    assertResult(Some("(add 1 (input x))"))(bottomup(List("x"),
+    assertResult(Some("add(1, (input x))"))(bottomup(List("x"),
       List(IOEx(List(1), 2), IOEx(List(2), 3))).map(pretty))
   }
   test("arith neg") {
