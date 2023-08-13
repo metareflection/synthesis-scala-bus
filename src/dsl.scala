@@ -27,6 +27,7 @@ trait DslBottomUpSearch extends Dsl with bus.BottomUpSearch {
     override def computeExprFromList(es: List[V]): V = List(opcode, es)
     override def computeValFromList(vs: List[V]): V = execute(opcode, vs)
   }
+  override val ops = opcodes.map(DslOp.apply)
 }
 
 trait ArithDsl extends Dsl {
@@ -55,3 +56,5 @@ trait ArithDsl extends Dsl {
     else if (v.isInstanceOf[Boolean]) "bool"
     else assert(false)
 }
+
+object arith_dsl_bus extends DslBottomUpSearch with ArithDsl
