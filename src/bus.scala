@@ -117,7 +117,7 @@ object bottomup_lib extends BottomUpSearch {
     override def computeExprFromList(es: List[V]): V = computeExpr(toListV(es))
     override def computeValFromList(vs: List[V]): V = computeVal(toListV(vs))
   }
-  val ops: List[SchemeOp] = List(
+  override lazy val ops: List[SchemeOp] = List(
     new SchemeOp {
       override val name = "cons"
       override val arity = 2
@@ -232,7 +232,7 @@ trait BottomUpSearch {
     def computeExprFromList(es: List[V]): V
     def computeValFromList(vs: List[V]): V
   }
-  val ops: List[Op]
+  lazy val ops: List[Op]
   case class Piece(expr: V, size: Int, deno: List[V])
   case class IOEx(args: List[V], output: V)
   def bottomup(formals: List[String], ios: List[IOEx], maxSize: Int = 8): Option[V] = {
