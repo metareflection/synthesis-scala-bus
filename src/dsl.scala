@@ -65,3 +65,119 @@ object arith_dsl_bus extends DslBottomUpSearch with ArithDsl {
       Piece(c, 1, ios.map{_ => c})}
   }
 }
+
+trait StringDsl extends Dsl {
+  val fewOps = false
+  val fewOpcodes = List("Concatenate", "Left", "Right", "If", "Exact")
+  val fullOpcodes = List(
+    "Concatenate",
+    "Left",
+    "Right",
+    "Mid",
+    "Replace",
+    "Trim",
+    "Repeat",
+    "Substitute",
+    "SubstituteI",
+    "To_Text",
+    "Lower",
+    "Upper",
+    "Proper",
+    "If",
+    "Add",
+    "Minus",
+    "Divide",
+    "Find",
+    "FindI",
+    "Len",
+    "Exact",
+    "Equals",
+    "GT",
+    "GE",
+    "IsNumber",
+    "Value")
+  override val types = List("str", "int", "bool")
+  override def execute(opcode: String, x: List[Any]): Any = opcode match {
+    case "Concatenate" => x(0).asInstanceOf[String] + x(1).asInstanceOf[String]
+    case "Left" => x(0).asInstanceOf[String].substring(0, x(1).asInstanceOf[Int])
+    case "Right" => {
+      val x0 = x(0).asInstanceOf[String]
+      x0.substring(x0.length - x(1).asInstanceOf[Int], x0.length)
+    }
+    case "Mid" => {
+      val x1 = x(1).asInstanceOf[Int]
+      x(0).asInstanceOf[String].substring(x1, x1 + x(2).asInstanceOf[Int])
+    }
+    case "Replace" => {
+      val a = x(0).asInstanceOf[String]
+      val start = x(1).asInstanceOf[Int]
+      val length = x(2).asInstanceOf[Int]
+      val r = x(3).asInstanceOf[String]
+      a.substring(0, start) + r + a.substring(start + length, a.length)
+    }
+    case "Trim" => x(0).asInstanceOf[String].strip()
+    case "Repeat" => x(0).asInstanceOf[String] * x(1).asInstanceOf[Int]
+    case "Substitute" => x(0).asInstanceOf[String].replace(x(1).asInstanceOf[String], x(2).asInstanceOf[String])
+    case "SubstituteI" => x(0).asInstanceOf[String].replace(x(1).asInstanceOf[String], x(2).asInstanceOf[String]) //TODO: , x(3).asInstanceOf[Int])
+    case "To_Text" => x(0).toString
+    case "Lower" => x(0).asInstanceOf[String].toLowerCase()
+    case "Upper" => x(0).asInstanceOf[String].toUpperCase()
+    case "Proper" => x(0).asInstanceOf[String].capitalize
+    case "If" => if (x(0).asInstanceOf[Boolean]) x(1) else x(2)
+    case "Add" => x(0).asInstanceOf[Int] + x(1).asInstanceOf[Int]
+    case "Minus" => x(0).asInstanceOf[Int] - x(1).asInstanceOf[Int]
+    case "Divide" => x(0).asInstanceOf[Int] / x(1).asInstanceOf[Int]
+    case "Find" => x(1).asInstanceOf[String].indexOf(x(0).asInstanceOf[String])
+    case "FindI" => x(1).asInstanceOf[String].indexOf(x(0).asInstanceOf[String], x(2).asInstanceOf[Int])
+    case "Len" => x(0).asInstanceOf[String].length
+    case "Exact" => x(0) == x(1)
+    case "GT" => x(0).asInstanceOf[Int] > x(1).asInstanceOf[Int]
+    case "GE" => x(0).asInstanceOf[Int] >= x(1).asInstanceOf[Int]
+    case "IsNumber" => x(0).asInstanceOf[String].forall(Character.isDigit)
+    case "Value" => x(0).asInstanceOf[String].toInt
+  }
+  override def types(op: String): (String, List[String]) = {
+    val s = "str"
+    val i = "int"
+    val b = "bool"
+    if (op == "Concatenate")
+      (s, List(s, s))
+    else if (Set("Left", "Right").contains(op))
+      (s, List(s, i))
+    else if (op == "Mid")
+      (s, List(s, i, i))
+    else if (op == "Replace")
+      (s, List(s, i, i, s))
+    else if (op == "Trim")
+      (s, List(s))
+    else if (op == "Repeat")
+      (s, List(s, i))
+    else if (op == "Substitute")
+      (s, List(s, s, s))
+    else if (op == "SubstituteI")
+      (s, List(s, s, s, i))
+    else if (op == "To_Text")
+      (s, List(i))
+    else if (Set("Lower", "Upper", "Proper").contains(op))
+      (s, List(s))
+    else if (op == "If")
+      (s, List(b, s, s))
+    else if (Set("Add", "Minus", "Divide").contains(op))
+      (i, List(i, i))
+    else if (op == "Find")
+      (i, List(s, s))
+    else if (op == "FindI")
+      (i, List(s, s, i))
+    else if (op == "Len")
+      (i, List(s))
+    else if (op == "Exact")
+      (b, List(s, s))
+    else if (Set("Equals", "GT", "GE").contains(op))
+      (b, List(i, i))
+    else if (op == "IsNumber")
+      (b, List(s))
+    else if (op == "Value")
+      (i, List(s))
+    else assert(false)
+  }
+}
