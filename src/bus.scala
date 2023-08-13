@@ -101,104 +101,111 @@ object eval_lib {
 }
 import eval_lib._
 
-object bottomup_lib {
-  case class Piece(expr: Value, size: Int, deno: List[Value])
-  abstract class Op {
-    val name: String
-    val arity: Int
-    def applicable(v: Value): Boolean = true
-    def computeExpr(e: Value): Value = P(S(name), e)
-    def computeVal(v: Value): Value
+object bottomup_lib extends BottomUpSearch {
+  type V = Value
+  override def evalExpr(e: V): V = eval(e)
+  override def formalExpr(s: String): V = S(s)
+  def toListV(lst: List[V]): V = lst match {
+    case Nil => N
+    case v::rest => P(v, toListV(rest))
   }
-  val ops: List[Op] = List(
-    new Op {
+  abstract class SchemeOp extends Op {
+    def applicable(v: V): Boolean = true
+    def computeExpr(e: V): V = P(S(name), e)
+    def computeVal(v: V): V
+    override def applicableFromList(vs: List[V]): Boolean = applicable(toListV(vs))
+    override def computeExprFromList(es: List[V]): V = computeExpr(toListV(es))
+    override def computeValFromList(vs: List[V]): V = computeVal(toListV(vs))
+  }
+  override lazy val ops: List[SchemeOp] = List(
+    new SchemeOp {
       override val name = "cons"
       override val arity = 2
-      override def computeVal(v: Value) = (v: @unchecked) match {
+      override def computeVal(v: V) = (v: @unchecked) match {
         case P(a, P(d, N)) => P(a, d)
       }
     },
-    new Op {
+    new SchemeOp {
       override val name = "car"
       override val arity = 1
-      override def applicable(v: Value): Boolean = v match {
+      override def applicable(v: V): Boolean = v match {
         case P(P(a, d), N) => true
         case _ => false
       }
-      override def computeVal(v: Value) = (v: @unchecked) match {
+      override def computeVal(v: V) = (v: @unchecked) match {
         case P(P(a, d), N) => a
       }
     },
-    new Op {
+    new SchemeOp {
       override val name = "cdr"
       override val arity = 1
-      override def applicable(v: Value): Boolean = v match {
+      override def applicable(v: V): Boolean = v match {
         case P(P(a, d), N) => true
         case _ => false
       }
-      override def computeVal(v: Value) = (v: @unchecked) match {
+      override def computeVal(v: V) = (v: @unchecked) match {
         case P(P(a, d), N) => d
       }
     },
-    new Op {
+    new SchemeOp {
       override val name = "not"
       override val arity = 1
-      override def applicable(v: Value): Boolean = v match {
+      override def applicable(v: V): Boolean = v match {
         case P(B(b), N) => true
         case _ => false
       }
-      override def computeVal(v: Value) = (v: @unchecked) match {
+      override def computeVal(v: V) = (v: @unchecked) match {
         case P(B(b), N) => B(!b)
       }
     },
-    new Op {
+    new SchemeOp {
       override val name = "add1"
       override val arity = 1
-      override def applicable(v: Value): Boolean = v match {
+      override def applicable(v: V): Boolean = v match {
         case P(I(n), N) => true
         case _ => false
       }
-      override def computeVal(v: Value) = (v: @unchecked) match {
+      override def computeVal(v: V) = (v: @unchecked) match {
         case P(I(n), N) => I(n+1)
       }
     },
-    new Op {
+    new SchemeOp {
       override val name = "+"
       override val arity = 2
-      override def applicable(v: Value): Boolean = v match {
+      override def applicable(v: V): Boolean = v match {
         case P(I(n1), P(I(n2), N)) => true
         case _ => false
       }
-      override def computeVal(v: Value) = (v: @unchecked) match {
+      override def computeVal(v: V) = (v: @unchecked) match {
         case P(I(n1), P(I(n2), N)) => I(n1+n2)
       }
     },
-    new Op {
+    new SchemeOp {
       override val name = "*"
       override val arity = 2
-      override def applicable(v: Value): Boolean = v match {
+      override def applicable(v: V): Boolean = v match {
         case P(I(n1), P(I(n2), N)) => true
         case _ => false
       }
-      override def computeVal(v: Value) = (v: @unchecked) match {
+      override def computeVal(v: V) = (v: @unchecked) match {
         case P(I(n1), P(I(n2), N)) => I(n1*n2)
       }
     },
-    new Op {
+    new SchemeOp {
       override val name = "append"
       override val arity = 2
-      override def applicable(v: Value): Boolean = v match {
+      override def applicable(v: V): Boolean = v match {
         case P(xs, P(ys, N)) => isList(xs)
         case _ => false
       }
-      override def computeVal(v: Value) = (v: @unchecked) match {
+      override def computeVal(v: V) = (v: @unchecked) match {
         case P(xs, P(ys, N)) => append(xs, ys)
       }
     },
-    new Op {
+    new SchemeOp {
       override val name = "apply1"
       override val arity = 2
-      override def applicable(v: Value): Boolean = v match {
+      override def applicable(v: V): Boolean = v match {
         case P(fun, P(_, N)) => fun match {
           case Prim(_, _) => true
           case Clo(_, _, _) => true
@@ -206,20 +213,36 @@ object bottomup_lib {
         }
         case _ => false
       }
-      override def computeExpr(e: Value): Value = e
-      override def computeVal(v: Value) = (v: @unchecked) match {
+      override def computeExpr(e: V): V = e
+      override def computeVal(v: V) = (v: @unchecked) match {
         case P(fun, args) => applyFun(fun, args)
       }
     }
   )
-  case class IOEx(args: List[Value], output: Value)
-  def bottomup(formals: List[String], ios: List[IOEx], maxSize: Int = 8): Option[Value] = {
+}
+
+trait BottomUpSearch {
+  type V
+  def evalExpr(e: V): V // TODO: distinguish between expressions and values
+  def formalExpr(s: String): V
+  abstract class Op {
+    val name: String
+    val arity: Int
+    def applicableFromList(vs: List[V]): Boolean
+    def computeExprFromList(es: List[V]): V
+    def computeValFromList(vs: List[V]): V
+  }
+  lazy val ops: List[Op]
+  case class Piece(expr: V, size: Int, deno: List[V])
+  case class IOEx(args: List[V], output: V)
+  def extractConstants(ios: List[IOEx]): List[Piece] = Nil
+  def bottomup(formals: List[String], ios: List[IOEx], maxSize: Int = 8): Option[V] = {
     val n = formals.length
-    val inputs = ios.map{io => io.args.map(eval)}
+    val inputs = ios.map{io => io.args.map(evalExpr)}
     val outputs = ios.map{io => io.output}
-    val inputPieces = (for (i <- 0 until n) yield Piece(S(formals(i)), 1, inputs.map(_(i)))).toList
-    val constantPieces = Nil // TODO
-    bottomupIter(outputs, 1, List(Nil, inputPieces ++ constantPieces), maxSize)
+    val inputPieces = (for (i <- 0 until n) yield Piece(formalExpr(formals(i)), 1, inputs.map(_(i)))).toList
+    val constantPieces = extractConstants(ios)
+    bottomupIter(outputs, 1, List(Nil, uniqueDenos(inputPieces ++ constantPieces)), maxSize)
   }
 
   def toOption[A](xs: List[A]): Option[A] = xs match {
@@ -227,27 +250,22 @@ object bottomup_lib {
     case x::_ => Some(x)
   }
 
-  def getDenotPiece(deno: List[Value], pieces: List[Piece]): Option[Piece] =
+  def getDenotPiece(deno: List[V], pieces: List[Piece]): Option[Piece] =
     toOption(pieces.filter(_.deno == deno))
-
-  def toListValue(lst: List[Value]): Value = lst match {
-    case Nil => N
-    case v::rest => P(v, toListValue(rest))
-  }
-  def piecesArguments(ps: List[Piece]): List[Value] =
-    ps.map(_.deno).transpose.map(toListValue)
+  def piecesArguments(ps: List[Piece]): List[List[V]] =
+    ps.map(_.deno).transpose
   def applicableOp(op: Op, ps: List[Piece]): Boolean =
-    piecesArguments(ps).forall(op.applicable)
+    piecesArguments(ps).forall(op.applicableFromList)
   def applyOp(op: Op, ps: List[Piece]): Option[Piece] = {
     val args = piecesArguments(ps)
-    var odeno: Option[List[Value]] = None
+    var odeno: Option[List[V]] = None
     try {
-      odeno = Some(args.map(op.computeVal))
+      odeno = Some(args.map(op.computeValFromList))
     } catch {
       case _ =>
     }
     odeno.map{deno =>
-      val expr = op.computeExpr(toListValue(ps.map(_.expr)))
+      val expr = op.computeExprFromList(ps.map(_.expr))
       val size = 1 + ps.map(_.size).sum
       Piece(expr, size, deno)
     }
@@ -279,7 +297,7 @@ object bottomup_lib {
       old_p.deno == p.deno
     }})}
 
-  def bottomupIter(outputs: List[Value], size: Int, piecess: List[List[Piece]], maxSize: Int): Option[Value] = getDenotPiece(outputs, piecess.last) match {
+  def bottomupIter(outputs: List[V], size: Int, piecess: List[List[Piece]], maxSize: Int): Option[V] = getDenotPiece(outputs, piecess.last) match {
     case Some(piece) => Some(piece.expr)
     case None => {
       val newSize = size + 1
