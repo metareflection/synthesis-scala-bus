@@ -16,4 +16,13 @@ class ArithDslTesting extends AnyFunSuite {
       bottomup(List("x"),
         List(IOEx(List(1), -1), IOEx(List(2), -2))))
   }
+  // TODO: more tests that require constants
+  /*
+   assert ("add", [("input", 0), ("neg", [1])]) == bustle(
+   al, int2, [[1, 2, 3]], [0, 1, 2], llProps, Ms
+   )
+   assert ("if", [("lt", [("input", 0), ("input", 1)]), 1, 0]) == bustle(
+   al, int3, [[1, 2, 3], [3, 1, 2]], [1, 0, 0], llProps
+   )
+   */
 }
