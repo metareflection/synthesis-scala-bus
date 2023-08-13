@@ -68,4 +68,11 @@ class StringDslTesting extends AnyFunSuite {
         IOEx(List("hello", "you"), "hello you"),
         IOEx(List("world", "domination"), "world domination"))).map(pretty))
   }
+  test("test 5") {
+    assertResult(Some("Concatenate(Left(input(x), 1), Right(input(x), 1))"))(bottomup(List("x"),
+      List(
+        IOEx(List("hello"), "ho"),
+        IOEx(List("world"), "wd"),
+        IOEx(List("domination"), "dn"))).map(pretty))
+  }
 }
