@@ -96,6 +96,7 @@ trait StringDsl extends Dsl {
     "GE",
     "IsNumber",
     "Value")
+  override val opcodes = if (fewOps) fewOpcodes else fullOpcodes
   override val types = List("str", "int", "bool")
   override def execute(opcode: String, x: List[Any]): Any = opcode match {
     case "Concatenate" => x(0).asInstanceOf[String] + x(1).asInstanceOf[String]
@@ -180,4 +181,11 @@ trait StringDsl extends Dsl {
       (i, List(s))
     else assert(false)
   }
+  override def inferType(v: Any): String =
+    if (v.isInstanceOf[String]) "str"
+    else if (v.isInstanceOf[Int]) "int"
+    else if (v.isInstanceOf[Boolean]) "bool"
+    else assert(false)
 }
+
+object string_dsl_bus extends DslBottomUpSearch with StringDsl
