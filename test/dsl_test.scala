@@ -1,10 +1,23 @@
 import org.scalatest.funsuite.AnyFunSuite
 
+object dsl_printer {
+    def pretty(x: Any): String = x match {
+      case List("input", name) => s"(input $name)"
+      case op::args => s"""($op${args.map(pretty).mkString(" ", " ", ")")}"""
+      case _ => x.toString
+  }
+}
+import dsl_printer._
+
 class ArithDslTesting extends AnyFunSuite {
   import arith_dsl_bus._
   test("arith id") {
     assertResult(Some(List("input", "x")))(bottomup(List("x"),
       List(IOEx(List(1), 1), IOEx(List(2), 2))))
+  }
+  test("arith id str") {
+    assertResult(Some("(input x)"))(bottomup(List("x"),
+      List(IOEx(List(1), 1), IOEx(List(2), 2))).map(pretty))
   }
   test("arith inc") {
     assertResult(Some(List("add", List(1, List("input", "x")))))(bottomup(List("x"),
