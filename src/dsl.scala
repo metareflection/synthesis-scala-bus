@@ -190,7 +190,7 @@ trait StringDsl extends Dsl {
 
 object string_dsl_bus extends DslBottomUpSearch with StringDsl {
   override def extractConstants(ios: List[IOEx]): List[Piece] = {
-    val alwaysConstants = List(0, 1)
+    val alwaysConstants = List(0, 1, " ")
     alwaysConstants.map{c =>
       Piece(c, 1, ios.map{_ => c})}
   }

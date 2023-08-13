@@ -5,6 +5,7 @@ object dsl_printer {
       case List("input", name) => s"input($name)"
       case List(op: String, args: List[Any]) =>
         op + args.map(pretty).mkString("(", ", ", ")")
+      case (s: String) => "\""+s+"\""// TODO: better
       case _ => x.toString
   }
 }
@@ -60,5 +61,11 @@ class StringDslTesting extends AnyFunSuite {
       List(
         IOEx(List("hello", "you"), "helloyou"),
         IOEx(List("world", "domination"), "worlddomination"))).map(pretty))
+  }
+  test("test 4") {
+    assertResult(Some("Concatenate(Concatenate(input(x), \" \"), input(y))"))(bottomup(List("x", "y"),
+      List(
+        IOEx(List("hello", "you"), "hello you"),
+        IOEx(List("world", "domination"), "world domination"))).map(pretty))
   }
 }
