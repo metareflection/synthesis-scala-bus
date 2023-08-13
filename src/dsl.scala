@@ -3,20 +3,19 @@ trait Dsl {
   val types: List[String]
   lazy val opCache: Set[String] = ops.toSet
 
-  sealed abstract class Tree
-  case class Atom(a: Any) extends Tree
-  case class Node(op: String, args: List[Tree]) extends Tree
-
   def execute(op: String, args: List[Any]): Any
   def types(op: String): (String, List[String])
   def inferTypes(v: Any): String
   // TODO: extractConstants
+}
 
-  def eval(x: Tree, inp: List[Any]): Any = x match {
-    case Node("input", List(Atom(i: Int))) => inp(i)
-    case Node(op, args) => execute(op, args.map(eval(_, inp)))
-    case Atom(a) => a
+trait DslBottomUpSearch extends bus.BottomUpSearch {
+  type V = Any
+  override def evalExpr(e: V): V = {
+    assert(!e.isInstanceOf[List[Any]]) // simplif
+    e
   }
+  override def formalExpr(s: String): V = List("input", s)
 }
 
 trait ArithDsl extends Dsl {

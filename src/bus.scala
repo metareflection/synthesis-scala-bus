@@ -105,14 +105,19 @@ object bottomup_lib extends BottomUpSearch {
   type V = Value
   override def evalExpr(e: V): V = eval(e)
   override def formalExpr(s: String): V = S(s)
-  override def toListV(lst: List[V]): V = lst match {
+  def toListV(lst: List[V]): V = lst match {
     case Nil => N
     case v::rest => P(v, toListV(rest))
   }
   abstract class SchemeOp extends Op {
-    override def computeExpr(e: V): V = P(S(name), e)
+    def applicable(v: V): Boolean = true
+    def computeExpr(e: V): V = P(S(name), e)
+    def computeVal(v: V): V
+    override def applicableFromList(vs: List[V]): Boolean = applicable(toListV(vs))
+    override def computeExprFromList(es: List[V]): V = computeExpr(toListV(es))
+    override def computeValFromList(vs: List[V]): V = computeVal(toListV(vs))
   }
-  val ops: List[Op] = List(
+  val ops: List[SchemeOp] = List(
     new SchemeOp {
       override val name = "cons"
       override val arity = 2
@@ -220,13 +225,12 @@ trait BottomUpSearch {
   type V
   def evalExpr(e: V): V // TODO: distinguish between expressions and values
   def formalExpr(s: String): V
-  def toListV(lst: List[V]): V
   abstract class Op {
     val name: String
     val arity: Int
-    def applicable(v: V): Boolean = true
-    def computeExpr(e: V): V
-    def computeVal(v: V): V
+    def applicableFromList(vs: List[V]): Boolean
+    def computeExprFromList(es: List[V]): V
+    def computeValFromList(vs: List[V]): V
   }
   val ops: List[Op]
   case class Piece(expr: V, size: Int, deno: List[V])
@@ -247,20 +251,20 @@ trait BottomUpSearch {
 
   def getDenotPiece(deno: List[V], pieces: List[Piece]): Option[Piece] =
     toOption(pieces.filter(_.deno == deno))
-  def piecesArguments(ps: List[Piece]): List[V] =
-    ps.map(_.deno).transpose.map(toListV)
+  def piecesArguments(ps: List[Piece]): List[List[V]] =
+    ps.map(_.deno).transpose
   def applicableOp(op: Op, ps: List[Piece]): Boolean =
-    piecesArguments(ps).forall(op.applicable)
+    piecesArguments(ps).forall(op.applicableFromList)
   def applyOp(op: Op, ps: List[Piece]): Option[Piece] = {
     val args = piecesArguments(ps)
     var odeno: Option[List[V]] = None
     try {
-      odeno = Some(args.map(op.computeVal))
+      odeno = Some(args.map(op.computeValFromList))
     } catch {
       case _ =>
     }
     odeno.map{deno =>
-      val expr = op.computeExpr(toListV(ps.map(_.expr)))
+      val expr = op.computeExprFromList(ps.map(_.expr))
       val size = 1 + ps.map(_.size).sum
       Piece(expr, size, deno)
     }
