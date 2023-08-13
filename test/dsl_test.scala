@@ -11,4 +11,9 @@ class ArithDslTesting extends AnyFunSuite {
     assertResult(Some(List("add", List("x", 1))))(bottomup(List("x"),
       List(IOEx(List(1), 2), IOEx(List(2), 3))))
   }
+  test("arith neg") {
+    assertResult(Some(List("neg", List(List("input", "x")))))(
+      bottomup(List("x"),
+        List(IOEx(List(1), -1), IOEx(List(2), -2))))
+  }
 }
