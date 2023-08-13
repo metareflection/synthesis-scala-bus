@@ -5,17 +5,28 @@ trait Dsl {
 
   def execute(opcode: String, args: List[Any]): Any
   def types(opcode: String): (String, List[String])
-  def inferTypes(v: Any): String
+  def inferType(v: Any): String
   // TODO: extractConstants
 }
 
-trait DslBottomUpSearch extends bus.BottomUpSearch {
+trait DslBottomUpSearch extends Dsl with bus.BottomUpSearch {
   type V = Any
   override def evalExpr(e: V): V = {
     assert(!e.isInstanceOf[List[Any]]) // simplif
     e
   }
   override def formalExpr(s: String): V = List("input", s)
+  case class DslOp(opcode: String) extends Op {
+    override val name = opcode
+    val typeSig = types(opcode)
+    val returnType = typeSig._1
+    val argTypes = typeSig._2
+    override val arity = argTypes.length
+    override def applicableFromList(vs: List[V]): Boolean =
+      arity == vs.length && vs.zip(argTypes).forall{case (v,t) => inferType(v)==t}
+    override def computeExprFromList(es: List[V]): V = List(opcode, es)
+    override def computeValFromList(vs: List[V]): V = execute(opcode, vs)
+  }
 }
 
 trait ArithDsl extends Dsl {
@@ -39,7 +50,7 @@ trait ArithDsl extends Dsl {
     else if (Set("if").contains(opcode))
         ("int", List("bool", "int", "int"))
     else assert(false)
-  override def inferTypes(v: Any): String =
+  override def inferType(v: Any): String =
     if (v.isInstanceOf[Int]) "int"
     else if (v.isInstanceOf[Boolean]) "bool"
     else assert(false)
