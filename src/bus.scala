@@ -235,13 +235,14 @@ trait BottomUpSearch {
   lazy val ops: List[Op]
   case class Piece(expr: V, size: Int, deno: List[V])
   case class IOEx(args: List[V], output: V)
+  def extractConstants(ios: List[IOEx]): List[Piece] = Nil
   def bottomup(formals: List[String], ios: List[IOEx], maxSize: Int = 8): Option[V] = {
     val n = formals.length
     val inputs = ios.map{io => io.args.map(evalExpr)}
     val outputs = ios.map{io => io.output}
     val inputPieces = (for (i <- 0 until n) yield Piece(formalExpr(formals(i)), 1, inputs.map(_(i)))).toList
-    val constantPieces = Nil // TODO
-    bottomupIter(outputs, 1, List(Nil, inputPieces ++ constantPieces), maxSize)
+    val constantPieces = extractConstants(ios)
+    bottomupIter(outputs, 1, List(Nil, uniqueDenos(inputPieces ++ constantPieces)), maxSize)
   }
 
   def toOption[A](xs: List[A]): Option[A] = xs match {

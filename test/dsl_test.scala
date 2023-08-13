@@ -6,9 +6,8 @@ class ArithDslTesting extends AnyFunSuite {
     assertResult(Some(List("input", "x")))(bottomup(List("x"),
       List(IOEx(List(1), 1), IOEx(List(2), 2))))
   }
-  ignore("arith inc") {
-    // TODO: need to extractConstants
-    assertResult(Some(List("add", List("x", 1))))(bottomup(List("x"),
+  test("arith inc") {
+    assertResult(Some(List("add", List(1, List("input", "x")))))(bottomup(List("x"),
       List(IOEx(List(1), 2), IOEx(List(2), 3))))
   }
   test("arith neg") {
