@@ -60,7 +60,7 @@ trait ArithDsl extends Dsl {
 object arith_dsl_bus extends DslBottomUpSearch with ArithDsl {
   override def extractConstants(ios: List[IOEx]): List[Piece] = {
     val alwaysConstants = List(0, 1)
-    val outputConstants = ios.map{io => io.output}
+    val outputConstants = Nil//ios.map{io => io.output}
     (alwaysConstants ++ outputConstants).map{c =>
       Piece(c, 1, ios.map{_ => c})}
   }
