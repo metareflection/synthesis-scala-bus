@@ -5,6 +5,7 @@ lazy val root = (project in file("."))
     libraryDependencies += "org.scala-lang.modules" %% "scala-parser-combinators" % "2.1.1",
     libraryDependencies += "org.scalactic" %% "scalactic" % "3.2.16",
     libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.16" % "test",
+    //parallelExecution in Test := false
   )
 
 Compile / scalaSource := baseDirectory.value / "src"

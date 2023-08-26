@@ -1,16 +1,5 @@
 import org.scalatest.funsuite.AnyFunSuite
 
-object dsl_printer {
-    def pretty(x: Any): String = x match {
-      case List("input", name) => s"input($name)"
-      case List(op: String, args: List[Any]) =>
-        op + args.map(pretty).mkString("(", ", ", ")")
-      case (s: String) => "\""+s+"\""// TODO: better
-      case _ => x.toString
-  }
-}
-import dsl_printer._
-
 class ArithDslTesting extends AnyFunSuite {
   import arith_dsl_bus._
   test("arith id") {

@@ -103,6 +103,19 @@ import eval_lib._
 
 object bottomup_lib extends BottomUpSearch {
   type V = Value
+  override def pretty(v: Value): String = v match {
+    case B(b) => if (b) "#t" else "#f"
+    case I(n) => n.toString
+    case S(sym) => sym
+    case N => "'()"
+    case P(car, cdr) => "(" + pretty(car) + (cdr match {
+      case N => ")"
+      case P(_, _) => " " + pretty(cdr).substring(1)
+      case _ => " . " + pretty(cdr) + ")"
+    })
+    case Prim(_, _) => "#<procedure>"
+    case Clo(_, _, _) => "#<procedure>"
+  }
   override def evalExpr(e: V): V = eval(e)
   override def formalExpr(s: String): V = S(s)
   def toListV(lst: List[V]): V = lst match {
@@ -233,7 +246,11 @@ trait BottomUpSearch {
     def computeValFromList(vs: List[V]): V
   }
   lazy val ops: List[Op]
-  case class Piece(expr: V, size: Int, deno: List[V])
+  def pretty(v: V): String
+  case class Piece(expr: V, size: Int, deno: List[V]) {
+    override def toString =
+      s"  (expr = ${pretty(expr)},\n   deno = ${deno.map(pretty).mkString("[", ", ", "]")})"
+  }
   case class IOEx(args: List[V], output: V)
   def extractConstants(ios: List[IOEx]): List[Piece] = Nil
   def bottomup(formals: List[String], ios: List[IOEx], maxSize: Int = 8): Option[V] = {
@@ -242,7 +259,9 @@ trait BottomUpSearch {
     val outputs = ios.map{io => io.output}
     val inputPieces = (for (i <- 0 until n) yield Piece(formalExpr(formals(i)), 1, inputs.map(_(i)))).toList
     val constantPieces = extractConstants(ios)
-    bottomupIter(outputs, 1, List(Nil, uniqueDenos(inputPieces ++ constantPieces)), maxSize)
+    val pieces1 = uniqueDenos(inputPieces ++ constantPieces)
+    logIter(1, pieces1)
+    bottomupIter(outputs, 1, List(Nil, pieces1), maxSize)
   }
 
   def toOption[A](xs: List[A]): Option[A] = xs match {
@@ -304,9 +323,20 @@ trait BottomUpSearch {
       if (newSize < maxSize) {
         val newPieces = computeNewPieces(newSize, piecess)
         val uniqueNewPieces = withoutDenos(piecess, uniqueDenos(newPieces))
+        logIter(newSize, uniqueNewPieces)
         val newPiecess = piecess ++ List(uniqueNewPieces)
         bottomupIter(outputs, newSize, newPiecess, maxSize)
       } else None
     }
+  }
+
+  def logIter(size: Int, pieces: List[Piece]): Unit = {
+    log("=== SIZE "+size.toString)
+    log(pieces.mkString("\n"))
+  }
+
+  val debug: Boolean = false
+  def log(s: => String): Unit = {
+    if (debug) println(s)
   }
 }

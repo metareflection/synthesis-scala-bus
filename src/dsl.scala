@@ -11,6 +11,13 @@ trait Dsl {
 
 trait DslBottomUpSearch extends Dsl with bus.BottomUpSearch {
   type V = Any
+  override def pretty(x: Any): String = x match {
+      case List("input", name) => s"input($name)"
+      case List(op: String, args: List[Any]) =>
+        op + args.map(pretty).mkString("(", ", ", ")")
+      case (s: String) => "\""+s+"\""// TODO: better
+      case _ => x.toString
+  }
   override def evalExpr(e: V): V = {
     assert(!e.isInstanceOf[List[Any]]) // simplif
     e
