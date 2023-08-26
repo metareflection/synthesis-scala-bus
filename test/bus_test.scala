@@ -9,19 +9,6 @@ import repl._
 import bottomup_lib._
 
 class BusTesting extends AnyFunSuite {
-  def pretty(v: Value): String = v match {
-    case B(b) => if (b) "#t" else "#f"
-    case I(n) => n.toString
-    case S(sym) => sym
-    case N => "'()"
-    case P(car, cdr) => "(" + pretty(car) + (cdr match {
-      case N => ")"
-      case P(_, _) => " " + pretty(cdr).substring(1)
-      case _ => " . " + pretty(cdr) + ")"
-    })
-    case Prim(_, _) => "#<procedure>"
-    case Clo(_, _, _) => "#<procedure>"
-  }
   def prettyopt(ov: Option[Value]): String = ov match {
     case None => "<none>"
     case Some(v) => pretty(v)
